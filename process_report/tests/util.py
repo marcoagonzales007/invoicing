@@ -16,6 +16,7 @@ from process_report.processors import (
     bu_subsidy_processor,
     prepayment_processor,
     validate_cluster_name_processor,
+    pi_su_credit_processor,
 )
 
 
@@ -204,4 +205,19 @@ def new_validate_cluster_name_processor(
 ):
     return validate_cluster_name_processor.ValidateClusterNameProcessor(
         invoice_month, data, name
+    )
+
+
+def new_pi_su_credit_processor(
+    name="",
+    invoice_month="0000-00",
+    data=None,
+    pi_su_mapping=None,
+):
+    if data is None:
+        data = pandas.DataFrame()
+    if pi_su_mapping is None:
+        pi_su_mapping = {}
+    return pi_su_credit_processor.PISUCreditProcessor(
+        invoice_month, data, name, pi_su_mapping
     )
