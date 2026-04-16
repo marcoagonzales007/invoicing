@@ -1,4 +1,5 @@
 from decimal import Decimal
+import datetime
 import functools
 import os
 import yaml
@@ -9,6 +10,7 @@ from nerc_rates import load_from_url
 from process_report import util
 from process_report.settings import invoice_settings
 from process_report.invoices import invoice
+from process_report.nonbillable_models import ExcludedProjectList, PIList
 
 # List of service invoices processed by pipeline. Change if new services are added.
 # Cannot simply filter by suffix because S3 can't do it
@@ -113,26 +115,23 @@ class Loader:
         return pandas.read_csv(filepath)
 
     @functools.lru_cache
-    def _load_pi_config(self, filepath: str) -> list[dict]:
+    def _load_pi_config(self, filepath: str) -> PIList:
         with open(filepath) as file:
             pi_list = yaml.safe_load(file)
 
-        if not isinstance(pi_list, list):
-            raise ValueError("pi.yaml must contain a YAML list")
-
-        return pi_list
+        return PIList.model_validate(pi_list)
 
     def get_nonbillable_pis(self) -> list[str]:
         pi_list = self._load_pi_config(invoice_settings.nonbillable_pis_filepath)
-        return [pi["username"] for pi in pi_list if "non_billed_su_types" not in pi]
+        return [pi.name for pi in pi_list.root if pi.non_billed_su_types is None]
 
     def get_pi_non_billed_su_types(self) -> dict[str, list[str]]:
         """PI usernames -> list of SU types that receive credit (zeroed out)."""
         pi_list = self._load_pi_config(invoice_settings.nonbillable_pis_filepath)
         return {
-            pi["username"]: [su["name"] for su in pi["non_billed_su_types"]]
-            for pi in pi_list
-            if "non_billed_su_types" in pi
+            pi.name: [su.name for su in pi.non_billed_su_types.root]
+            for pi in pi_list.root
+            if pi.non_billed_su_types is not None
         }
 
     @functools.lru_cache
@@ -147,44 +146,43 @@ class Loader:
            indicating whether matching projects should be treated as billable
         """
 
-        def _is_in_time_range(timed_object) -> bool:
+        def _is_in_time_range(start: datetime.date, end: datetime.date) -> bool:
             # Leveraging inherent lexicographical order of YYYY-MM strings
-            return (
-                timed_object["start"] <= invoice_settings.invoice_month
-                and invoice_settings.invoice_month <= timed_object["end"]
-            )
+            invoice_date = datetime.datetime.strptime(
+                invoice_settings.invoice_month, "%Y-%m"
+            ).date()
+            return start <= invoice_date <= end
 
         project_list = []
         with open(invoice_settings.nonbillable_projects_filepath) as file:
-            projects_dict = yaml.safe_load(file)
+            data = yaml.safe_load(file)
+        projects = ExcludedProjectList.model_validate(data)
+        for project in projects.root:
+            project_name = project.name
+            cluster_list = project.clusters.root
+            is_billable = project.is_billable
 
-        for project in projects_dict:
-            project_name = project["name"]
-            cluster_list = project.get("clusters")
-            is_billable = project.get("is_billable", False)
-
-            if project.get("start"):
-                if not _is_in_time_range(project):
+            if project.start:
+                if not _is_in_time_range(project.start, project.end):
                     continue
 
                 if cluster_list:
                     for cluster in cluster_list:
                         project_list.append(
-                            (project_name, cluster["name"], True, is_billable)
+                            (project_name, cluster.name, True, is_billable)
                         )
                 else:
                     project_list.append((project_name, None, True, is_billable))
             elif cluster_list:
                 for cluster in cluster_list:
-                    cluster_start_time = cluster.get("start")
-                    if cluster_start_time:
-                        if _is_in_time_range(cluster):
+                    if cluster.start:
+                        if _is_in_time_range(cluster.start, cluster.end):
                             project_list.append(
-                                (project_name, cluster["name"], True, is_billable)
+                                (project_name, cluster.name, True, is_billable)
                             )
-                    elif not cluster_start_time:
+                    elif not cluster.start:
                         project_list.append(
-                            (project_name, cluster["name"], False, is_billable)
+                            (project_name, cluster.name, False, is_billable)
                         )
             else:
                 project_list.append((project_name, None, False, is_billable))
