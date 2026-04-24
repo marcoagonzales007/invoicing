@@ -1,0 +1,22 @@
+OpenStack GPUK80
+OpenShift Unknown GPU
+BM FC430
+OpenStack GPUA100SXM4
+OpenStack GPUV100
+OpenStack Storage
+OpenStack GPUA100
+OpenStack Object Storage
+OpenStack Volume Storage
+OpenShift GPUV100
+OpenShift GPUH100
+OpenShift NESE Storage
+BM FC830
+ESI GPUH100SXM5
+BM GPUH100SXM5
+BM R740XDAMD
+OpenShift GPUA100SXM4
+OpenShift CPU
+ESI A100SXM4
+OpenShift Storage
+BM GPUA100SXM4
+OpenStack CPU
