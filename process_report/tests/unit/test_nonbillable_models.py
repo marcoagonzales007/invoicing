@@ -1,7 +1,94 @@
 import pytest
 import pydantic
-
 from process_report.models import nonbillable_models
+
+
+@pytest.mark.parametrize(
+    "projects_data",
+    [
+        [
+            {
+                "name": "ProjectA",
+                "clusters": [{"name": "Cluster1"}, {"name": "Cluster2"}],
+            },
+            {
+                "name": "ProjectB",
+                "clusters": [
+                    {"name": "Cluster1", "start": "2023-01", "end": "2023-12"}
+                ],
+            },
+            {"name": "ProjectC", "start": "2023-06", "end": "2023-07"},
+            {
+                "name": "ProjectD",
+                "is_billable": True,
+                "clusters": [
+                    {"name": "Cluster1", "start": "2023-05", "end": "2023-09"},
+                    {"name": "Cluster2", "start": "2023-05", "end": "2023-11"},
+                ],
+            },
+            {"name": "ProjectE"},
+        ],
+    ],
+)
+def test_timed_projects(mocker, projects_data):
+    mocker.patch(
+        "process_report.models.nonbillable_models.get_allowed_clusters",
+        return_value={"Cluster1", "Cluster2"},
+    )
+    projects = nonbillable_models.ExcludedProjectList.model_validate(projects_data)
+    result = projects.get_nonbillable_projects("2023-09")
+    timed = [(name, cluster) for name, cluster, is_timed, _ in result if is_timed]
+    expected = [
+        ("ProjectB", "Cluster1"),
+        ("ProjectD", "Cluster1"),
+        ("ProjectD", "Cluster2"),
+    ]
+    assert timed == expected
+
+
+@pytest.mark.parametrize(
+    "projects_data",
+    [
+        [
+            {
+                "name": "ProjectA",
+                "clusters": [{"name": "Cluster1"}, {"name": "Cluster2"}],
+            },
+            {
+                "name": "ProjectB",
+                "clusters": [
+                    {"name": "Cluster1", "start": "2023-01", "end": "2023-12"}
+                ],
+            },
+            {"name": "ProjectC", "start": "2023-06", "end": "2023-07"},
+            {
+                "name": "ProjectD",
+                "is_billable": True,
+                "clusters": [
+                    {"name": "Cluster1", "start": "2023-05", "end": "2023-09"},
+                    {"name": "Cluster2", "start": "2023-05", "end": "2023-11"},
+                ],
+            },
+            {"name": "ProjectE"},
+        ],
+    ],
+)
+def test_nonbillable_projects(mocker, projects_data):
+    mocker.patch(
+        "process_report.models.nonbillable_models.get_allowed_clusters",
+        return_value={"Cluster1", "Cluster2"},
+    )
+    projects = nonbillable_models.ExcludedProjectList.model_validate(projects_data)
+    result = projects.get_nonbillable_projects("2023-09")
+    expected = [
+        ("ProjectA", "Cluster1", False, False),
+        ("ProjectA", "Cluster2", False, False),
+        ("ProjectB", "Cluster1", True, False),
+        ("ProjectD", "Cluster1", True, True),
+        ("ProjectD", "Cluster2", True, True),
+        ("ProjectE", None, False, False),
+    ]
+    assert result == expected
 
 
 @pytest.mark.parametrize(

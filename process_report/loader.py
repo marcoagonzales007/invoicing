@@ -9,13 +9,7 @@ from nerc_rates import load_from_url
 from process_report import util
 from process_report.settings import invoice_settings
 from process_report.invoices import invoice
-from process_report.models.nonbillable_models import (
-    ExcludedProjectList,
-    PIList,
-    get_nonbillable_pis as _get_nonbillable_pis,
-    get_nonbillable_projects as _get_nonbillable_projects,
-    get_pi_non_billed_su_types as _get_pi_non_billed_su_types,
-)
+from process_report.models.nonbillable_models import ExcludedProjectList, PIList
 
 # List of service invoices processed by pipeline. Change if new services are added.
 # Cannot simply filter by suffix because S3 can't do it
@@ -128,12 +122,12 @@ class Loader:
 
     def get_nonbillable_pis(self) -> list[str]:
         pi_list = self._load_pi_config(invoice_settings.nonbillable_pis_filepath)
-        return _get_nonbillable_pis(pi_list)
+        return pi_list.get_nonbillable_pis()
 
     def get_pi_non_billed_su_types(self) -> dict[str, list[str]]:
         """PI usernames -> list of SU types that receive credit (zeroed out)."""
         pi_list = self._load_pi_config(invoice_settings.nonbillable_pis_filepath)
-        return _get_pi_non_billed_su_types(pi_list)
+        return pi_list.get_pi_non_billed_su_types()
 
     @functools.lru_cache
     def get_nonbillable_projects(self) -> pandas.DataFrame:
@@ -150,9 +144,7 @@ class Loader:
         with open(invoice_settings.nonbillable_projects_filepath) as file:
             data = yaml.safe_load(file)
         projects = ExcludedProjectList.model_validate(data)
-        project_list = _get_nonbillable_projects(
-            projects, invoice_settings.invoice_month
-        )
+        project_list = projects.get_nonbillable_projects(invoice_settings.invoice_month)
         return pandas.DataFrame(
             project_list,
             columns=[

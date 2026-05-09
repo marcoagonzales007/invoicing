@@ -1,6 +1,5 @@
 import datetime
 import pydantic
-import pandas
 from typing import Annotated, TypeVar
 from functools import lru_cache
 from pathlib import Path
@@ -95,9 +94,6 @@ class ExcludedProject(NamedObject):
         return self
 
 
-ExcludedProjectList = UniqueObjectList[ExcludedProject]
-
-
 class NonBilledSUType(NamedObject):
     @pydantic.field_validator("name")
     def only_allowed_su_types(cls, v):
@@ -117,69 +113,56 @@ class PIParticipant(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(populate_by_name=True)
 
 
-PIList = UniqueObjectList[PIParticipant]
+class PIList(UniqueObjectList[PIParticipant]):
+    def get_nonbillable_pis(self) -> list[str]:
+        return [pi.name for pi in self.root if pi.non_billed_su_types is None]
+
+    def get_pi_non_billed_su_types(self) -> dict[str, list[str]]:
+        return {
+            pi.name: [su.name for su in pi.non_billed_su_types.root]
+            for pi in self.root
+            if pi.non_billed_su_types is not None
+        }
 
 
-def get_nonbillable_pis(pi_list: PIList) -> list[str]:
-    return [pi.name for pi in pi_list.root if pi.non_billed_su_types is None]
+class ExcludedProjectList(UniqueObjectList[ExcludedProject]):
+    def get_nonbillable_projects(
+        self, invoice_month: str
+    ) -> list[tuple[str, str | None, bool, bool]]:
+        invoice_date = datetime.datetime.strptime(invoice_month, "%Y-%m").date()
 
+        def _is_in_time_range(start: datetime.date, end: datetime.date) -> bool:
+            return start <= invoice_date <= end
 
-def get_pi_non_billed_su_types(pi_list: PIList) -> dict[str, list[str]]:
-    """PI usernames -> list of SU types that receive credit (zeroed out)."""
-    return {
-        pi.name: [su.name for su in pi.non_billed_su_types.root]
-        for pi in pi_list.root
-        if pi.non_billed_su_types is not None
-    }
+        project_list = []
 
+        for project in self.root:
+            project_name = project.name
+            cluster_list = project.clusters.root
+            is_billable = project.is_billable
 
-def get_nonbillable_projects(
-    excluded_projects: ExcludedProjectList, invoice_month: str
-) -> pandas.DataFrame:
-    """
-    Returns dataframe of nonbillable projects for current invoice month
-    The dataframe has 4 columns: Project Name, Cluster, Is Timed, Is Billable Override
-    1. Project Name: Name of the nonbillable project
-    2. Cluster: Name of the cluster for which the project is nonbillable, or None meaning all clusters
-    3. Is Timed: Boolean indicating if the nonbillable status is time-bound
-    4. Is Billable Override: Optional boolean override from projects.yaml
-       indicating whether matching projects should be treated as billable
-    """
-    invoice_date = datetime.datetime.strptime(invoice_month, "%Y-%m").date()
-
-    def _is_in_time_range(start: datetime.date, end: datetime.date) -> bool:
-        # Leveraging inherent lexicographical order of YYYY-MM strings
-
-        return start <= invoice_date <= end
-
-    project_list = []
-
-    for project in excluded_projects.root:
-        project_name = project.name
-        cluster_list = project.clusters.root
-        is_billable = project.is_billable
-
-        if project.start:
-            if not _is_in_time_range(project.start, project.end):
-                continue
-
-            if cluster_list:
-                for cluster in cluster_list:
-                    project_list.append((project_name, cluster.name, True, is_billable))
-            else:
-                project_list.append((project_name, None, True, is_billable))
-        elif cluster_list:
-            for cluster in cluster_list:
-                if cluster.start:
-                    if _is_in_time_range(cluster.start, cluster.end):
+            if project.start:
+                if not _is_in_time_range(project.start, project.end):
+                    continue
+                if cluster_list:
+                    for cluster in cluster_list:
                         project_list.append(
                             (project_name, cluster.name, True, is_billable)
                         )
-                elif not cluster.start:
-                    project_list.append(
-                        (project_name, cluster.name, False, is_billable)
-                    )
-        else:
-            project_list.append((project_name, None, False, is_billable))
+                else:
+                    project_list.append((project_name, None, True, is_billable))
+            elif cluster_list:
+                for cluster in cluster_list:
+                    if cluster.start:
+                        if _is_in_time_range(cluster.start, cluster.end):
+                            project_list.append(
+                                (project_name, cluster.name, True, is_billable)
+                            )
+                    else:
+                        project_list.append(
+                            (project_name, cluster.name, False, is_billable)
+                        )
+            else:
+                project_list.append((project_name, None, False, is_billable))
 
-    return project_list
+        return project_list

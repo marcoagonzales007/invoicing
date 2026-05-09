@@ -3,10 +3,6 @@ import tempfile
 import pandas
 import os
 import pytest
-import yaml
-
-from process_report.settings import invoice_settings
-from process_report.loader import loader
 from process_report import process_report, util
 
 
@@ -62,82 +58,6 @@ class TestMergeCSV(TestCase):
         assert merged_dataframe.columns.tolist() == self.header
 
         assert merged_dataframe["Name"].iloc[0] == "Alice, Allison"
-
-
-class TestTimedProjects(TestCase):
-    def setUp(self):
-        self.yaml_data = [
-            {
-                "name": "ProjectA",
-                "clusters": [{"name": "Cluster1"}, {"name": "Cluster2"}],  # Not timed
-            },
-            {
-                "name": "ProjectB",
-                "clusters": [
-                    {"name": "Cluster1", "start": "2023-01", "end": "2023-12"}
-                ],
-            },
-            {
-                "name": "ProjectC",
-                "start": "2023-06",
-                "end": "2023-07",
-            },
-            {
-                "name": "ProjectD",
-                "is_billable": True,
-                "clusters": [
-                    {"name": "Cluster1", "start": "2023-05", "end": "2023-09"},
-                    {"name": "Cluster2", "start": "2023-05", "end": "2023-11"},
-                ],
-            },
-            {
-                "name": "ProjectE",
-            },
-        ]
-
-        self.yaml_file = tempfile.NamedTemporaryFile(delete=False, mode="w")
-        yaml.dump(self.yaml_data, self.yaml_file)
-        self.yaml_file.close()
-
-        invoice_settings.invoice_month = "2023-09"  # This excludes ProjectC
-        invoice_settings.nonbillable_projects_filepath = self.yaml_file.name
-
-    def tearDown(self):
-        os.remove(self.yaml_file.name)
-
-    def test_timed_projects(self):
-        excluded_projects = loader.get_nonbillable_timed_projects()
-
-        expected_projects = [
-            ("ProjectB", "Cluster1"),
-            ("ProjectD", "Cluster1"),
-            ("ProjectD", "Cluster2"),
-        ]
-        assert excluded_projects == expected_projects
-
-    def test_get_nonbillable_projects_loads_yaml_into_expected_dataframe(self):
-        # This verifies the loader translates the YAML fixture into the
-        # internal dataframe shape, including the Is Billable Override column.
-        nonbillable_projects = loader.get_nonbillable_projects()
-
-        expected_projects = pandas.DataFrame(
-            [
-                ("ProjectA", "Cluster1", False, False),
-                ("ProjectA", "Cluster2", False, False),
-                ("ProjectB", "Cluster1", True, False),
-                ("ProjectD", "Cluster1", True, True),
-                ("ProjectD", "Cluster2", True, True),
-                ("ProjectE", None, False, False),
-            ],
-            columns=[
-                "Project Name",
-                "Cluster",
-                "Timed",
-                "Is Billable Override",
-            ],
-        )
-
-        assert nonbillable_projects.equals(expected_projects)
 
 
 class TestValidateRequiredEnvVars(TestCase):
