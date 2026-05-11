@@ -1,4 +1,4 @@
 - username: PI9
 - username: PI10
   non_billed_su_types:
-    - name: SU1
+    - name: OpenStack CPU
