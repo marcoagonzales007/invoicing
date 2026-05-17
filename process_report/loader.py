@@ -114,20 +114,18 @@ class Loader:
         return pandas.read_csv(filepath)
 
     @functools.lru_cache
-    def _load_pi_config(self, filepath: str) -> PIList:
-        with open(filepath) as file:
+    def _load_pi_config(self) -> PIList:
+        with open(invoice_settings.nonbillable_pis_filepath) as file:
             pi_list = yaml.safe_load(file)
 
         return PIList.model_validate(pi_list)
 
     def get_nonbillable_pis(self) -> list[str]:
-        pi_list = self._load_pi_config(invoice_settings.nonbillable_pis_filepath)
-        return pi_list.get_nonbillable_pis()
+        return self._load_pi_config().get_nonbillable_pis()
 
     def get_pi_non_billed_su_types(self) -> dict[str, list[str]]:
         """PI usernames -> list of SU types that receive credit (zeroed out)."""
-        pi_list = self._load_pi_config(invoice_settings.nonbillable_pis_filepath)
-        return pi_list.get_pi_non_billed_su_types()
+        return self._load_pi_config().get_pi_non_billed_su_types()
 
     @functools.lru_cache
     def get_nonbillable_projects(self) -> pandas.DataFrame:
