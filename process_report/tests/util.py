@@ -16,6 +16,7 @@ from process_report.processors import (
     bu_subsidy_processor,
     prepayment_processor,
     validate_cluster_name_processor,
+    add_institution_processor,
 )
 
 
@@ -205,3 +206,13 @@ def new_validate_cluster_name_processor(
     return validate_cluster_name_processor.ValidateClusterNameProcessor(
         invoice_month, data, name
     )
+
+
+def new_add_institution_processor(
+    name="",
+    invoice_month="0000-00",
+    data=None,
+):
+    if data is None:
+        data = pandas.DataFrame()
+    return add_institution_processor.AddInstitutionProcessor(invoice_month, data, name)
