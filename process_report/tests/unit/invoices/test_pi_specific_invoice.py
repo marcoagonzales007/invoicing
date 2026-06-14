@@ -196,6 +196,7 @@ class TestPISpecificInvoice(TestCase):
     ):
         invoice_month = "2025-01"
         test_invoice = self._get_test_invoice(
+            # First row has no PI and so should be skipped during export
             pi=[None, "PI1"],
             institution=["", "BU"],
             balance=[0, 100],
@@ -212,10 +213,7 @@ class TestPISpecificInvoice(TestCase):
 
     @mock.patch("process_report.invoices.invoice.Invoice._filter_columns")
     @mock.patch("os.path.exists")
-    @mock.patch("subprocess.run")
-    def test_export_no_chrome(
-        self, mock_subprocess_run, mock_path_exists, mock_filter_cols
-    ):
+    def test_export_no_chrome(self, mock_path_exists, mock_filter_cols):
         invoice_month = "2025-01"
         test_invoice = self._get_test_invoice(
             pi=[None, "PI1"],
@@ -239,13 +237,14 @@ class TestPISpecificInvoice(TestCase):
         mock_listdir.return_value = ["BU_PI1_2025-01.pdf"]
         s3_bucket = mock.MagicMock()
         invoice_month = "2025-01"
-        test_invoice = self._get_test_invoice(
-            pi=["PI1"],
-            institution=["BU"],
-            balance=[100],
-        )
-        pi_inv = test_utils.new_pi_specific_invoice(
-            "test_dir", invoice_month, data=test_invoice
-        )
+
+        pi_inv = test_utils.new_pi_specific_invoice("test_dir", invoice_month)
         pi_inv.export_s3(s3_bucket)
+        expected_path = "test_dir/BU_PI1_2025-01.pdf"
+        expected_s3_archive_path = (
+            "Invoices/2025-01/Archive/test_dir/BU_PI1_2025-01 2025-01-01.pdf"
+        )
+        expected_s3_path = "Invoices/2025-01/test_dir/BU_PI1_2025-01.pdf"
+        s3_bucket.upload_file.assert_any_call(expected_path, expected_s3_archive_path)
+        s3_bucket.upload_file.assert_any_call(expected_path, expected_s3_path)
         assert s3_bucket.upload_file.call_count == 2
