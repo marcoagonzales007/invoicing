@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, mock
 import pandas
 
 from process_report.tests import util as test_utils
@@ -36,6 +36,26 @@ class TestCreditsSnapshot(TestCase):
             prepay_credits=test_prepay_credits,
             prepay_contacts=test_prepay_contacts,
         )
-        output_snapshot = new_prepayment_proc._get_prepay_credits_snapshot()
+        new_prepayment_proc._prepare()
+        assert answer_credits_snapshot.equals(new_prepayment_proc.export_data)
 
-        assert answer_credits_snapshot.equals(output_snapshot)
+    def test_output_path(self):
+        inv = test_utils.new_prepay_credits_snapshot(invoice_month="2025-01")
+
+        assert inv.output_path == "NERC_Prepaid_Group-Credits-2025-01.csv"
+
+    def test_output_s3_key(self):
+        inv = test_utils.new_prepay_credits_snapshot(invoice_month="2025-01")
+        assert (
+            inv.output_s3_key
+            == "Invoices/2025-01/NERC_Prepaid_Group-Credits-2025-01.csv"
+        )
+
+    @mock.patch("process_report.util.get_iso8601_time")
+    def test_output_s3_archive_key(self, mock_time):
+        mock_time.return_value = "2025-01-01T00:00:00"
+        inv = test_utils.new_prepay_credits_snapshot(invoice_month="2025-01")
+        assert (
+            inv.output_s3_archive_key
+            == "Invoices/2025-01/Archive/NERC_Prepaid_Group-Credits-2025-01 2025-01-01T00:00:00.csv"
+        )
