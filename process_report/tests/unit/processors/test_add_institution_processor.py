@@ -40,7 +40,6 @@ class TestAddInstitutionProcessor(TestCase):
             projects=["ProjectA", "ProjectB"],
             institutions=["Boston University", "MIT"],
         )
-        answer_data = answer_data.astype(output.dtypes)
         assert output.equals(answer_data)
 
     @mock.patch("process_report.util.load_institute_list")
@@ -65,5 +64,4 @@ class TestAddInstitutionProcessor(TestCase):
             projects=["ProjectA", "ProjectB"],
             institutions=["", "Boston University"],
         )
-        answer_data = answer_data.astype(output.dtypes)
         assert output.equals(answer_data)
