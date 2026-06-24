@@ -1,11 +1,12 @@
-from unittest import TestCase, mock
+from unittest import mock
 import pandas
 import pytest
 
 from process_report.tests import util as test_utils
+from process_report.tests.base import BaseTestCase
 
 
-class TestColdfrontFetchProcessor(TestCase):
+class TestColdfrontFetchProcessor(BaseTestCase):
     def _get_test_invoice(
         self,
         allocation_project_id,
@@ -28,9 +29,9 @@ class TestColdfrontFetchProcessor(TestCase):
             cluster_name = [""] * len(allocation_project_id)
 
         if not is_course:
-            is_course = [None] * len(allocation_project_id)
+            is_course = [False] * len(allocation_project_id)
 
-        return pandas.DataFrame(
+        return self.create_test_invoice(
             {
                 "Manager (PI)": pi,
                 "Project - Allocation": allocation_project_name,

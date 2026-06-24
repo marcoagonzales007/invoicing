@@ -28,9 +28,9 @@ class TestMergeCSV(TestCase):
     def setUp(self):
         self.header = ["Cost", "Name", "Rate"]
         self.data = [
-            [1, "Alice, Allison", 25],
-            [2, "Bob", 30],
-            [3, "Charlie", 28],
+            [1, "Alice, Allison", 25.0],
+            [2, "Bob", 30.0],
+            [3, "Charlie", 28.0],
         ]
 
         self.csv_files = []

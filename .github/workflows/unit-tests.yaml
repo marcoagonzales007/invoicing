@@ -23,4 +23,6 @@ jobs:
 
       - name: Run unit tests
         run: |
-          python -m pytest process_report/tests/unit
+          coverage run --source="." -m pytest process_report/tests/unit
+          coverage combine
+          coverage html --fail-under=80 --omit "process_report/tests/**"

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from decimal import Decimal
 
 from process_report.loader import loader
 from process_report.invoices import invoice
@@ -9,6 +8,18 @@ from process_report.processors import discount_processor
 @dataclass
 class BUSubsidyProcessor(discount_processor.DiscountProcessor):
     IS_DISCOUNT_BY_NERC = False
+
+    initializes_columns = (invoice.PROJECT_NAME_COLUMN, invoice.SUBSIDY_COLUMN)
+    operates_on_columns = (
+        *initializes_columns,
+        invoice.PROJECT_COLUMN,
+        invoice.PI_COLUMN,
+        invoice.IS_BILLABLE_COLUMN,
+        invoice.MISSING_PI_COLUMN,
+        invoice.INSTITUTION_COLUMN,
+        invoice.PI_BALANCE_COLUMN,
+        invoice.BALANCE_COLUMN,
+    )
 
     subsidy_amount: int = field(default_factory=loader.get_bu_subsidy_amount)
 
@@ -21,7 +32,6 @@ class BUSubsidyProcessor(discount_processor.DiscountProcessor):
                 return project_alloc[: project_alloc.rfind("-")]
 
         self.data[invoice.PROJECT_NAME_FIELD] = self.data.apply(get_project, axis=1)
-        self.data[invoice.SUBSIDY_FIELD] = Decimal(0)
 
     def _process(self):
         self.data = self._apply_subsidy(self.data, self.subsidy_amount)

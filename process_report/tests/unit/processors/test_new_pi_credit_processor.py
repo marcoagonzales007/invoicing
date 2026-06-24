@@ -109,14 +109,19 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
 
         if not institution:
             institution = ["Foo University" for _ in range(len(pi))]
-        return pandas.DataFrame(
+        costs = [Decimal(cost) for cost in costs]
+        return self.create_test_invoice(
             {
                 "Manager (PI)": pi,
                 "Cost": [Decimal(cost) for cost in costs],
+                "Credit": None,
+                "Credit Code": None,
                 "SU Type": su_type,
                 "Is Billable": is_billable,
                 "Missing PI": missing_pi,
                 "Institution": institution,
+                "PI Balance": costs,
+                "Balance": costs,
             }
         )
 
@@ -139,19 +144,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [None for _ in range(3)],
-                        "Credit Code": [None for _ in range(3)],
-                        "PI Balance": [100 for _ in range(3)],
-                        "Balance": [100 for _ in range(3)],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [None for _ in range(3)],
+                "Credit Code": [None for _ in range(3)],
+                "PI Balance": [100 for _ in range(3)],
+                "Balance": [100 for _ in range(3)],
+            }
         )
 
         answer_old_pi_df = test_old_pi_df.copy()
@@ -182,19 +181,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [100],
-                        "Credit Code": ["0002"],
-                        "PI Balance": [0],
-                        "Balance": [0],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [100],
+                "Credit Code": ["0002"],
+                "PI Balance": [0],
+                "Balance": [0],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -218,19 +211,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         # Two allocations, costs partially covered
         test_invoice = self._get_test_invoice(["PI", "PI"], [500, 1000])
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [500, 500],
-                        "Credit Code": ["0002", "0002"],
-                        "PI Balance": [0, 500],
-                        "Balance": [0, 500],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [500, 500],
+                "Credit Code": ["0002", "0002"],
+                "PI Balance": [0, 500],
+                "Balance": [0, 500],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -254,19 +241,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         # Two allocations, costs completely covered
         test_invoice = self._get_test_invoice(["PI", "PI"], [500, 400])
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [500, 400],
-                        "Credit Code": ["0002", "0002"],
-                        "PI Balance": [0, 0],
-                        "Balance": [0, 0],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [500, 400],
+                "Credit Code": ["0002", "0002"],
+                "PI Balance": [0, 0],
+                "Balance": [0, 0],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -305,19 +286,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [200],
-                        "Credit Code": ["0002"],
-                        "PI Balance": [0],
-                        "Balance": [0],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [200],
+                "Credit Code": ["0002"],
+                "PI Balance": [0],
+                "Balance": [0],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -341,19 +316,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         # Remaining credits partially covers costs
         test_invoice = self._get_test_invoice(["PI"], [600])
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [500],
-                        "Credit Code": ["0002"],
-                        "PI Balance": [100],
-                        "Balance": [100],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [500],
+                "Credit Code": ["0002"],
+                "PI Balance": [100],
+                "Balance": [100],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -392,19 +361,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [500, None, 500],
-                        "Credit Code": ["0002", None, "0002"],
-                        "PI Balance": [300, 500, 0],
-                        "Balance": [300, 500, 0],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [500, None, 500],
+                "Credit Code": ["0002", None, "0002"],
+                "PI Balance": [300, 500, 0],
+                "Balance": [300, 500, 0],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -443,19 +406,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [200, None],
-                        "Credit Code": ["0002", None],
-                        "PI Balance": [300, 500],
-                        "Balance": [300, 500],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [200, None],
+                "Credit Code": ["0002", None],
+                "PI Balance": [300, 500],
+                "Balance": [300, 500],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -505,19 +462,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [600, None, 400, None],
-                        "Credit Code": ["0002", None, "0002", None],
-                        "PI Balance": [0, 600, 200, 600],
-                        "Balance": [0, 600, 200, 600],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [600, None, 400, None],
+                "Credit Code": ["0002", None, "0002", None],
+                "PI Balance": [0, 600, 200, 600],
+                "Balance": [0, 600, 200, 600],
+            }
         )
 
         # PI2 was not eligible for credit, so should only get 0 initial credits
@@ -558,19 +509,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [None],
-                        "Credit Code": [None],
-                        "PI Balance": [500],
-                        "Balance": [500],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [None],
+                "Credit Code": [None],
+                "PI Balance": [500],
+                "Balance": [500],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(
@@ -612,19 +557,13 @@ class TestNewPICreditProcessor(BaseTestCaseWithTempDir):
         )
         test_old_pi_df.to_csv(test_old_pi_file, index=False)
 
-        answer_invoice = pandas.concat(
-            [
-                test_invoice,
-                pandas.DataFrame(
-                    {
-                        "Credit": [None],
-                        "Credit Code": [None],
-                        "PI Balance": [800],
-                        "Balance": [800],
-                    }
-                ),
-            ],
-            axis=1,
+        answer_invoice = test_invoice.assign(
+            **{
+                "Credit": [None],
+                "Credit Code": [None],
+                "PI Balance": [800],
+                "Balance": [800],
+            }
         )
 
         answer_old_pi_df = pandas.DataFrame(

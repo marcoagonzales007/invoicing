@@ -43,7 +43,7 @@ class TestPrepaymentProcessor(BaseTestCaseWithTempDir):
         if not balances:
             balances = pi_balances
 
-        return pandas.DataFrame(
+        return self.create_test_invoice(
             {
                 "Project": project_names,
                 "PI Balance": pi_balances,

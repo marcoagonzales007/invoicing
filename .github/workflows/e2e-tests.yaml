@@ -29,6 +29,8 @@ jobs:
 
     - name: Run E2E Tests
       run: |
-        pytest process_report/tests/e2e/test_e2e_pipeline.py -v -s --log-cli-level=INFO
+        coverage run --source="." -m pytest process_report/tests/e2e/test_e2e_pipeline.py -v -s --log-cli-level=INFO
+        coverage combine
+        coverage html --fail-under=85 --omit "process_report/tests/**,process_report/util.py,process_report/institute_list_validate.py"
       env:
         CHROME_BIN_PATH: '/usr/bin/chromium'

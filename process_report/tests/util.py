@@ -5,6 +5,7 @@ from process_report.invoices import (
     pi_specific_invoice,
     prepay_credits_snapshot,
     NERC_total_invoice,
+    MOCA_prepaid_invoice,
 )
 
 from process_report.processors import (
@@ -216,3 +217,17 @@ def new_add_institution_processor(
     if data is None:
         data = pandas.DataFrame()
     return add_institution_processor.AddInstitutionProcessor(invoice_month, data, name)
+
+
+def new_moca_prepaid_invoice(
+    name="",
+    invoice_month="0000-00",
+    data=None,
+):
+    if data is None:
+        data = pandas.DataFrame()
+    return MOCA_prepaid_invoice.MOCAPrepaidInvoice(
+        invoice_month,
+        data,
+        name,
+    )

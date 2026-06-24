@@ -34,6 +34,16 @@ class ColdfrontFetchProcessor(processor.Processor):
     )
     coldfront_data_filepath: str = invoice_settings.coldfront_api_filepath
 
+    initializes_columns = (invoice.IS_COURSE_COLUMN,)
+    operates_on_columns = (
+        *initializes_columns,
+        invoice.PROJECT_COLUMN,
+        invoice.PROJECT_ID_COLUMN,
+        invoice.CLUSTER_NAME_COLUMN,
+        invoice.PI_COLUMN,
+        invoice.INSTITUTION_ID_COLUMN,
+    )
+
     @functools.cached_property
     def coldfront_client(self):
         keycloak_url = os.environ.get("KEYCLOAK_URL", "https://keycloak.mss.mghpcc.org")
@@ -143,7 +153,6 @@ class ColdfrontFetchProcessor(processor.Processor):
             )
 
     def _apply_allocation_data(self, allocation_data):
-        self.data[invoice.IS_COURSE_FIELD] = False
         for project_cluster_tuple, data in allocation_data.items():
             project_id, cluster_name = project_cluster_tuple
             mask = (self.data[invoice.PROJECT_ID_FIELD] == project_id) & (

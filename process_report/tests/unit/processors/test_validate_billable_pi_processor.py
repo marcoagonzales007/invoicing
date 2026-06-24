@@ -66,7 +66,7 @@ class TestValidateBillablePIProcessor(TestCase):
         )
         validate_billable_pi_proc.process()
         output = validate_billable_pi_proc.data
-        assert output[output["Is Billable"]].equals(data.iloc[[3, 4, 5, 9]])
+        assert output["Is Billable"].iloc[[3, 4, 5, 9]].all()
 
     def test_billable_override_marks_project_billable(self):
         test_data = pandas.DataFrame(

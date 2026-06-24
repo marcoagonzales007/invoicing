@@ -9,6 +9,13 @@ from process_report.processors import processor
 class LenovoProcessor(processor.Processor):
     su_charge_info: dict = field(default_factory=loader.get_lenovo_su_charge_info)
 
+    initializes_columns = (invoice.SU_CHARGE_COLUMN, invoice.LENOVO_CHARGE_COLUMN)
+    operates_on_columns = (
+        *initializes_columns,
+        invoice.SU_TYPE_COLUMN,
+        invoice.SU_HOURS_COLUMN,
+    )
+
     def _apply_su_charge(self, data):
         for su_name, su_charge in self.su_charge_info.items():
             if su_name in data:

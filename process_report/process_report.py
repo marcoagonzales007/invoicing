@@ -3,7 +3,6 @@ import logging
 import os
 
 import pandas
-import pyarrow
 
 from process_report.settings import invoice_settings
 from process_report.loader import loader
@@ -22,6 +21,7 @@ from process_report.invoices import (
 )
 from process_report.processors import (
     coldfront_fetch_processor,
+    validate_input_column_processor,
     validate_pi_alias_processor,
     add_institution_processor,
     lenovo_processor,
@@ -32,6 +32,20 @@ from process_report.processors import (
     prepayment_processor,
     validate_cluster_name_processor,
 )
+
+PROCESSING_ORDER = [
+    validate_input_column_processor.ValidateInputColumnsProcessor,
+    validate_cluster_name_processor.ValidateClusterNameProcessor,
+    coldfront_fetch_processor.ColdfrontFetchProcessor,
+    validate_pi_alias_processor.ValidatePIAliasProcessor,
+    add_institution_processor.AddInstitutionProcessor,
+    lenovo_processor.LenovoProcessor,
+    validate_billable_pi_processor.ValidateBillablePIsProcessor,
+    pi_su_credit_processor.PISUCreditProcessor,
+    new_pi_credit_processor.NewPICreditProcessor,
+    bu_subsidy_processor.BUSubsidyProcessor,
+    prepayment_processor.PrepaymentProcessor,
+]
 
 
 PI_S3_FILEPATH = "PIs/PI.csv"
@@ -66,20 +80,7 @@ def main():
 
     ### Preliminary processing
     processed_data = process_merged_dataframe(
-        invoice_month,
-        merged_dataframe,
-        [
-            validate_cluster_name_processor.ValidateClusterNameProcessor,
-            coldfront_fetch_processor.ColdfrontFetchProcessor,
-            validate_pi_alias_processor.ValidatePIAliasProcessor,
-            add_institution_processor.AddInstitutionProcessor,
-            lenovo_processor.LenovoProcessor,
-            validate_billable_pi_processor.ValidateBillablePIsProcessor,
-            pi_su_credit_processor.PISUCreditProcessor,
-            new_pi_credit_processor.NewPICreditProcessor,
-            bu_subsidy_processor.BUSubsidyProcessor,
-            prepayment_processor.PrepaymentProcessor,
-        ],
+        invoice_month, merged_dataframe, PROCESSING_ORDER
     )
 
     ### Export invoices
@@ -109,8 +110,19 @@ def merge_csv(files):
             file,
             engine="pyarrow",
             dtype={
-                invoice.COST_FIELD: pandas.ArrowDtype(pyarrow.decimal128(21, 2)),
-                invoice.RATE_FIELD: str,
+                invoice.INVOICE_DATE_COLUMN.name: invoice.INVOICE_DATE_COLUMN.dtype,
+                invoice.PROJECT_COLUMN.name: invoice.PROJECT_COLUMN.dtype,
+                invoice.PROJECT_ID_COLUMN.name: invoice.PROJECT_ID_COLUMN.dtype,
+                invoice.PI_COLUMN.name: invoice.PI_COLUMN.dtype,
+                invoice.CLUSTER_NAME_COLUMN.name: invoice.CLUSTER_NAME_COLUMN.dtype,
+                invoice.INVOICE_EMAIL_COLUMN.name: invoice.INVOICE_EMAIL_COLUMN.dtype,
+                invoice.INVOICE_ADDRESS_COLUMN.name: invoice.INVOICE_ADDRESS_COLUMN.dtype,
+                invoice.INSTITUTION_COLUMN.name: invoice.INSTITUTION_COLUMN.dtype,
+                invoice.INSTITUTION_ID_COLUMN.name: invoice.INSTITUTION_ID_COLUMN.dtype,
+                invoice.SU_HOURS_COLUMN.name: invoice.SU_HOURS_COLUMN.dtype,
+                invoice.SU_TYPE_COLUMN.name: invoice.SU_TYPE_COLUMN.dtype,
+                invoice.RATE_COLUMN.name: invoice.RATE_COLUMN.dtype,
+                invoice.COST_COLUMN.name: invoice.COST_COLUMN.dtype,
             },
             quotechar="|",
         )

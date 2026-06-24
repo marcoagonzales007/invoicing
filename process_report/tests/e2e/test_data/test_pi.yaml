@@ -1,4 +1,4 @@
 - username: PI9
-- username: PI10
+- username: pi2@harvard.edu
   non_billed_su_types:
-    - name: SU1
+    - name: Free CPU

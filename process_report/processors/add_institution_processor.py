@@ -14,6 +14,12 @@ logging.basicConfig(level=logging.INFO)
 
 @dataclass
 class AddInstitutionProcessor(processor.Processor):
+    operates_on_columns = (
+        invoice.INSTITUTION_COLUMN,
+        invoice.PI_COLUMN,
+        invoice.PROJECT_COLUMN,
+    )
+
     def _add_institution(self):
         """Determine every PI's institution name, logging any PI whose institution cannot be determined
         This is performed by `get_institution_from_pi()`, which tries to match the PI's username to
