@@ -114,6 +114,13 @@ class Loader:
         return pandas.read_csv(filepath)
 
     @functools.lru_cache
+    def load_prepay_credits(self) -> pandas.DataFrame:
+        prepay_df = self.load_dataframe(invoice_settings.prepay_credits_filepath)
+        return prepay_df.astype(
+            {invoice.PREPAY_CREDIT_FIELD: invoice.BALANCE_FIELD_TYPE}
+        )
+
+    @functools.lru_cache
     def _load_pi_config(self) -> PIList:
         with open(invoice_settings.nonbillable_pis_filepath) as file:
             pi_list = yaml.safe_load(file)
