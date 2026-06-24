@@ -34,6 +34,19 @@ class NewPICreditProcessor(discount_processor.DiscountProcessor):
     ]
     IS_DISCOUNT_BY_NERC = True
 
+    operates_on_columns = (
+        invoice.CREDIT_COLUMN,
+        invoice.CREDIT_CODE_COLUMN,
+        invoice.BALANCE_COLUMN,
+        invoice.PI_BALANCE_COLUMN,
+        invoice.SU_TYPE_COLUMN,
+        invoice.IS_BILLABLE_COLUMN,
+        invoice.MISSING_PI_COLUMN,
+        invoice.INSTITUTION_COLUMN,
+        invoice.COST_COLUMN,
+        invoice.PI_COLUMN,
+    )
+
     old_pi_filepath: str = field(
         default_factory=lambda: loader.get_remote_filepath(
             invoice_settings.pi_remote_filepath
@@ -176,10 +189,7 @@ class NewPICreditProcessor(discount_processor.DiscountProcessor):
                 credit_eligible_projects[invoice.PI_FIELD] == pi
             ]
 
-            if pi_age > 1:
-                for i, row in pi_projects.iterrows():
-                    data.at[i, invoice.BALANCE_FIELD] = row[invoice.COST_FIELD]
-            else:
+            if pi_age <= 1:
                 if pi_age == 0:
                     old_pi_df = self._upsert_pi_entry(
                         old_pi_df,
@@ -226,10 +236,6 @@ class NewPICreditProcessor(discount_processor.DiscountProcessor):
         return (data, old_pi_df)
 
     def _prepare(self):
-        self.data[invoice.CREDIT_FIELD] = None
-        self.data[invoice.CREDIT_CODE_FIELD] = None
-        self.data[invoice.PI_BALANCE_FIELD] = self.data[invoice.COST_FIELD]
-        self.data[invoice.BALANCE_FIELD] = self.data[invoice.COST_FIELD]
         self.old_pi_df = self._load_old_pis(self.old_pi_filepath)
 
     def _process(self):

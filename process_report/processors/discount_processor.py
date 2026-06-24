@@ -51,7 +51,7 @@ class DiscountProcessor(processor.Processor):
             remaining_project_balance = project[pi_balance_field]
             applied_discount = min(remaining_project_balance, remaining_discount_amount)
 
-            if invoice.at[project_i, discount_field] is None:
+            if pandas.isna(invoice.at[project_i, discount_field]):
                 invoice.at[project_i, discount_field] = applied_discount
             else:
                 invoice.at[project_i, discount_field] += applied_discount

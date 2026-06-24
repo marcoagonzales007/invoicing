@@ -12,6 +12,8 @@ class ValidateClusterNameProcessor(processor.Processor):
         "NERC-OCP-EDU": "academic",
     }
 
+    operates_on_columns = (invoice.CLUSTER_NAME_COLUMN,)
+
     def _process(self):
         self.data[invoice.CLUSTER_NAME_FIELD] = self.data[
             invoice.CLUSTER_NAME_FIELD

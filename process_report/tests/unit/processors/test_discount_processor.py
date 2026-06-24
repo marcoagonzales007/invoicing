@@ -1,12 +1,9 @@
-from unittest import TestCase
-
-import pandas
-
 from process_report.invoices import invoice
 from process_report.processors.pi_su_credit_processor import PISUCreditProcessor
+from process_report.tests.base import BaseTestCase
 
 
-class TestDiscountProcessor(TestCase):
+class TestDiscountProcessor(BaseTestCase):
     def _get_test_invoice(
         self,
         pi,
@@ -26,7 +23,7 @@ class TestDiscountProcessor(TestCase):
         if balance is None:
             balance = costs
 
-        return pandas.DataFrame(
+        return self.create_test_invoice(
             {
                 invoice.PI_FIELD: pi,
                 invoice.SU_TYPE_FIELD: su_type,

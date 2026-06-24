@@ -25,6 +25,19 @@ class PISUCreditProcessor(discount_processor.DiscountProcessor):
     IS_DISCOUNT_BY_NERC = True
     PI_SU_CREDIT_CODE = "0005"
 
+    initializes_columns = (
+        invoice.CREDIT_COLUMN,
+        invoice.CREDIT_CODE_COLUMN,
+        invoice.PI_BALANCE_COLUMN,
+        invoice.BALANCE_COLUMN,
+    )
+    operates_on_columns = (
+        *initializes_columns,
+        invoice.SU_TYPE_COLUMN,
+        invoice.PI_COLUMN,
+        invoice.COST_COLUMN,
+    )
+
     pi_su_mapping: dict[str, list[str]] = field(
         default_factory=loader.get_pi_non_billed_su_types
     )

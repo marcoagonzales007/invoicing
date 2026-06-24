@@ -20,14 +20,27 @@ class PrepaymentProcessor(discount_processor.DiscountProcessor):
     IS_DISCOUNT_BY_NERC = True
     PREPAY_DEBITS_S3_FILEPATH = "Prepay/prepay_debits.csv"
 
+    initializes_columns = (
+        invoice.GROUP_NAME_COLUMN,
+        invoice.GROUP_INSTITUTION_COLUMN,
+        invoice.GROUP_MANAGED_COLUMN,
+        invoice.GROUP_BALANCE_COLUMN,
+        invoice.GROUP_BALANCE_USED_COLUMN,
+    )
+    operates_on_columns = (
+        *initializes_columns,
+        invoice.INVOICE_EMAIL_COLUMN,
+        invoice.PROJECT_NAME_COLUMN,
+        invoice.PI_BALANCE_COLUMN,
+        invoice.BALANCE_COLUMN,
+    )
+
     @property
     def PREPAY_DEBITS_S3_BACKUP_FILEPATH(self):
         return f"Prepay/Archive/prepay_debits {util.get_iso8601_time()}.csv"
 
     prepay_credits: pandas.DataFrame = field(
-        default_factory=lambda: loader.load_dataframe(
-            invoice_settings.prepay_credits_filepath
-        )
+        default_factory=lambda: loader.load_prepay_credits()
     )
     prepay_projects: pandas.DataFrame = field(
         default_factory=lambda: loader.load_dataframe(
@@ -49,19 +62,15 @@ class PrepaymentProcessor(discount_processor.DiscountProcessor):
     @staticmethod
     def _load_prepay_debits(prepay_debits_filepath):
         try:
-            prepay_debits = pandas.read_csv(prepay_debits_filepath)
+            prepay_debits = pandas.read_csv(prepay_debits_filepath).astype(
+                {invoice.PREPAY_DEBIT_FIELD: invoice.BALANCE_FIELD_TYPE}
+            )
         except FileNotFoundError:
             sys.exit("Applying prepayments failed. prepay debits file does not exist")
 
         return prepay_debits
 
     def _prepare(self):
-        self.data[invoice.GROUP_NAME_FIELD] = None
-        self.data[invoice.GROUP_INSTITUTION_FIELD] = None
-        self.data[invoice.GROUP_MANAGED_FIELD] = None
-        self.data[invoice.GROUP_BALANCE_FIELD] = None
-        self.data[invoice.GROUP_BALANCE_USED_FIELD] = None
-
         self.prepay_debits = self._load_prepay_debits(self.prepay_debits_filepath)
         self.group_info_dict = self._get_prepay_group_dict()
         if self.upload_to_s3:
