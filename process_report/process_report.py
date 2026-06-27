@@ -3,7 +3,7 @@ import logging
 import os
 
 import pandas
-
+from process_report import invoice_csv
 from process_report.settings import invoice_settings
 from process_report.loader import loader
 from process_report import util
@@ -106,9 +106,8 @@ def merge_csv(files):
     """Merge multiple CSV files and return a single pandas dataframe"""
     dataframes = []
     for file in files:
-        dataframe = pandas.read_csv(
+        dataframe = invoice_csv.read_invoice_csv(
             file,
-            engine="pyarrow",
             dtype={
                 invoice.INVOICE_DATE_COLUMN.name: invoice.INVOICE_DATE_COLUMN.dtype,
                 invoice.PROJECT_COLUMN.name: invoice.PROJECT_COLUMN.dtype,
@@ -124,7 +123,6 @@ def merge_csv(files):
                 invoice.RATE_COLUMN.name: invoice.RATE_COLUMN.dtype,
                 invoice.COST_COLUMN.name: invoice.COST_COLUMN.dtype,
             },
-            quotechar="|",
         )
         dataframes.append(dataframe)
 
