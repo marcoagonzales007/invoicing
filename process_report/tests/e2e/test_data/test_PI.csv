@@ -2,5 +2,6 @@ PI,First Invoice Month,Initial Credits,1st Month Used,2nd Month Used
 pi5@harvard.edu,2025-06,0.00,0.00,0.00
 pi6@mit.edu,2025-06,0.00,0.00,0.00
 pi4@example.edu,2025-06,0.00,0.00,0.00
-pi1@bu.edu,2025-04,1000.00,300.00,0.00
-pi2@harvard.edu,2025-04,1000.00,300.00,0.00
+pi1@bu.edu,2025-06,1000.00,320.00,0.00
+pi2@harvard.edu,2025-05,1000.00,300.00,35.00
+pi7@mit.edu,2025-04,1000.00,1000.00,0.00

@@ -37,5 +37,11 @@
             "Allocated Project Name": "P3",
             "Allocated Project ID": "P3ID"
         }
+    },
+    {
+        "id" : 1,
+        "project" : {"pi" : "pi7@mit.edu"},
+        "resource": { "name": "shift" },
+        "attributes": { "Allocated Project Name": "P7", "Allocated Project ID": "P7ID" }
     }
 ]
