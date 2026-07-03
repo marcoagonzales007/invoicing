@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 import pandas as pd
 import pytest
@@ -117,10 +118,13 @@ def _prepare_pipeline_execution(
     env["UPLOAD_TO_S3"] = "false"
     env["invoice_path_template"] = str(test_files["test_invoice_dir"])
 
-    env["PI_REMOTE_FILEPATH"] = str(test_files["test_PI.csv"])
+    pi_file_copy = workspace / "test_PI.csv"
+    shutil.copy(test_files["test_PI.csv"], pi_file_copy)
+    env["PI_REMOTE_FILEPATH"] = str(pi_file_copy)
     env["ALIAS_REMOTE_FILEPATH"] = str(test_files["test_alias.csv"])
-    env["PREPAY_DEBITS_REMOTE_FILEPATH"] = str(test_files["test_prepay_debits.csv"])
-
+    prepay_debits_copy = workspace / "test_prepay_debits.csv"
+    shutil.copy(test_files["test_prepay_debits.csv"], prepay_debits_copy)
+    env["PREPAY_DEBITS_REMOTE_FILEPATH"] = str(prepay_debits_copy)
     env["PREPAY_CREDITS_FILEPATH"] = str(test_files["test_prepay_credits.csv"])
     env["PREPAY_PROJECTS_FILEPATH"] = str(test_files["test_prepay_projects.csv"])
     env["PREPAY_CONTACTS_FILEPATH"] = str(test_files["test_prepay_contacts.csv"])
