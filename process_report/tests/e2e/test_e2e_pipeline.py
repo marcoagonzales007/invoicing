@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
-import pandas as pd
 import pytest
 import logging
 import subprocess
 from typing import Dict, List
+from process_report import invoice_csv
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +188,7 @@ def _validate_outputs(workspace: Path) -> None:
         assert csv_path.stat().st_size > 0, f"CSV file is empty: {csv_path}"
 
         try:
-            df = pd.read_csv(csv_path)
+            df = invoice_csv.read_invoice_csv(csv_path)
             assert len(df.columns) > 0, f"CSV has no columns: {csv_path}"
         except Exception as e:
             pytest.fail(f"Failed to read CSV {csv_path}: {e}")
