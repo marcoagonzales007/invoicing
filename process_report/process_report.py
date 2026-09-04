@@ -8,7 +8,6 @@ from process_report.settings import invoice_settings
 from process_report.loader import loader
 from process_report import util
 from process_report.invoices import (
-    invoice,
     lenovo_invoice,
     nonbillable_invoice,
     billable_invoice,
@@ -106,24 +105,7 @@ def merge_csv(files):
     """Merge multiple CSV files and return a single pandas dataframe"""
     dataframes = []
     for file in files:
-        dataframe = invoice_csv.read_invoice_csv(
-            file,
-            dtype={
-                invoice.INVOICE_DATE_COLUMN.name: invoice.INVOICE_DATE_COLUMN.dtype,
-                invoice.PROJECT_COLUMN.name: invoice.PROJECT_COLUMN.dtype,
-                invoice.PROJECT_ID_COLUMN.name: invoice.PROJECT_ID_COLUMN.dtype,
-                invoice.PI_COLUMN.name: invoice.PI_COLUMN.dtype,
-                invoice.CLUSTER_NAME_COLUMN.name: invoice.CLUSTER_NAME_COLUMN.dtype,
-                invoice.INVOICE_EMAIL_COLUMN.name: invoice.INVOICE_EMAIL_COLUMN.dtype,
-                invoice.INVOICE_ADDRESS_COLUMN.name: invoice.INVOICE_ADDRESS_COLUMN.dtype,
-                invoice.INSTITUTION_COLUMN.name: invoice.INSTITUTION_COLUMN.dtype,
-                invoice.INSTITUTION_ID_COLUMN.name: invoice.INSTITUTION_ID_COLUMN.dtype,
-                invoice.SU_HOURS_COLUMN.name: invoice.SU_HOURS_COLUMN.dtype,
-                invoice.SU_TYPE_COLUMN.name: invoice.SU_TYPE_COLUMN.dtype,
-                invoice.RATE_COLUMN.name: invoice.RATE_COLUMN.dtype,
-                invoice.COST_COLUMN.name: invoice.COST_COLUMN.dtype,
-            },
-        )
+        dataframe = invoice_csv.read_invoice_csv(file)
         dataframes.append(dataframe)
 
     merged_dataframe = pandas.concat(dataframes, ignore_index=True)
